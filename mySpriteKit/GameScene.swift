@@ -10,6 +10,7 @@ import SpriteKit
 import GameplayKit
 
 class GameScene: SKScene {
+    private var level = 1
     private let zombie = SKSpriteNode(imageNamed: "zombie1")
     private var lastUpdateTime: TimeInterval = 0
     private var dt: TimeInterval = 0
@@ -44,7 +45,8 @@ class GameScene: SKScene {
     private let enemyCollisionSound: SKAction = SKAction.playSoundFileNamed(
         "hitCatLady.wav", waitForCompletion: false)
     
-    override init(size: CGSize) {
+    init(size: CGSize, level: Int) {
+        self.level = level
         let maxAspectRatio:CGFloat = 16.0 / 9.0 // 1
         let playableHeight = size.width / maxAspectRatio // 2
         let playableMargin = (size.height-playableHeight)/2.0 // 3
@@ -80,6 +82,8 @@ class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
+        lives = level == 1 ? 8 : level == 2 ? 5 : 3
+
         for i in 0...1 {
             let background = backgroundNode()
             background.anchorPoint = CGPoint.zero
@@ -250,7 +254,8 @@ class GameScene: SKScene {
                 max: cameraRect.maxY - enemy.size.height/2))
         enemy.zPosition = 1
         addChild(enemy)
-        let actionMove = SKAction.moveBy(x: -cameraRect.width, y: 0, duration: 3.0)
+        let duration = level == 1 ? 3.0 : level == 2 ? 2.0 : 1.0
+        let actionMove = SKAction.moveBy(x: -cameraRect.width, y: 0, duration: duration)
         let actionRemove = SKAction.removeFromParent()
         enemy.run(SKAction.sequence([actionMove, actionRemove]))
     }
@@ -361,8 +366,7 @@ class GameScene: SKScene {
             var hitEnemies: [SKSpriteNode] = []
             enumerateChildNodes(withName: "enemy") { node, _ in
                 let enemy = node as! SKSpriteNode
-                if node.frame.insetBy(dx: 20, dy: 20).intersects(
-                    self.zombie.frame) {
+                if node.frame.insetBy(dx: 100, dy: 100).intersects(self.zombie.frame) {
                     hitEnemies.append(enemy)
                 }
             }
@@ -391,7 +395,8 @@ class GameScene: SKScene {
         
         catsLabel.text = "Cats: \(trainCount)"
         
-        if trainCount >= 15 && !gameOver {
+        let winCriteria = self.level == 1 ? 10 : self.level == 2 ? 15 : 20
+        if trainCount >= winCriteria && !gameOver {
             gameOver = true
             print("You win!")
             backgroundMusicPlayer.stop()
